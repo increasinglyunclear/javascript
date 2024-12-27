@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>increasingly unclear / planetary vexations</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            text-align: left;
+            font-family: monospace;
+            background: #1a1a1a;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        a {color: orange;}
+        h1 { 
+            color: white;
+            margin: 15px 0;
+            font-size: 16px;
+            font-weight: normal;
+            letter-spacing: 1px;
+        }
+        #playButton {
+            width: 80%;
+            max-width: 300px;
+            padding: 15px;
+            font-size: 14px;
+            margin: 15px 0;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid orange;
+            color: orange;
+            border-radius: 0;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+            font-family: monospace;
+        }
+        #playButton:not([disabled]) {
+            opacity: 1;
+        }
+        #playButton:hover:not([disabled]), #playButton.ready:not([disabled]) {
+            background: orange;
+            color: black;
+        }
+        #planet-display {
+            margin: 20px 0;
+            padding: 20px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 0;
+            line-height: 1.4;
+            font-family: monospace;
+            text-align: left;
+            width: 50%;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        #description {
+            width: 50%;
+            margin: 20px 0;
+            line-height: 1.4;
+            font-size: 14px;
+            color: #888;
+        }
+        .loading { color: #ff9800; }
+        .playing { color: #4CAF50; }
+        .status-line {
+            margin: 5px 0;
+            font-family: monospace;
+        }
+        .error { color: #ff4444; }
+        .success { color: #44ff44; }
+        .debug {
+            color: #888888;
+            font-size: 0.9em;
+        }
+        .planet { color: #4a9eff; }
+        .intrusion { color: #ff4a4a; }
+        .electronic { color: #00ffff; }
+        /* Add responsive styles */
+        @media (max-width: 800px) {
+            body { padding: 10px; }
+            #planet-display { 
+                width: 85%;
+                height: 60vh;
+            }
+            #playButton {
+                width: 80%;
+                padding: 15px;
+            }
+            #description {
+                width: 90%;
+            }
+        }
+        canvas {
+            background: transparent;
+    </style>
+</head>
+<body>
+    <a href="../index.html">increasingly unclear</a>
+    <h1>Planetary Vexations</h1>
+    <canvas id="artCanvas" width="400" height="100"></canvas>
+
+    <script>
+        const canvas = document.getElementById('artCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Clear with transparent background
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Circle parameters
+        const numCircles = 8;
+        const minRadius = 10;
+        const maxRadius = 35;
+        const minSpacing = 10;  // Minimum distance between circle centers
+
+        // Draw circles
+        let lastX = maxRadius;  // Start position for first circle
+
+        for (let i = 0; i < numCircles; i++) {
+            const radius = Math.floor(Math.random() * (maxRadius - minRadius + 1)) + minRadius;
+            
+            // Random spacing between this and previous circle
+            const spacing = minSpacing + Math.random() * 20;
+            lastX += spacing;
+
+            // Ensure x position keeps circle within bounds
+            const x = Math.max(radius, Math.min(lastX, canvas.width - radius));
+            const y = canvas.height / 2;
+
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';  // 50% white
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    </script>
+
+    <div id="description">
+        Generative music piece based on Erik Satie's piano work Vexations. The piano composition is based on real-time positions of the planets, with electronic intrusions based on planetary relations, taking it into Sun Ra territory. 
+        <p>Code and more info on <a href="https://github.com/increasinglyunclear/javascript/tree/main/planets">GitHub</a></p>
+    </div>
+
+    
+    <button id="playButton">Initialize Audio</button>
+    <div id="planet-display">Click Initialize Audio to begin...</div>
+
+    <script>
+        class VexationsSequence {
+            constructor() {
+                // Original Satie motif
+                this.originalMotif = [
+                    'C4', 'C#4', 'F4', 'F#4', 'G#4', 'C4', 'F#4', 'G4',
+                    'E4', 'Eb4', 'D4', 'B3', 'Bb3', 'A3', 'G#3', 'F#3'
+                ];
+                
+                // Additional variations
+                this.variations = [
+                    // Inverted motif
+                    ['F#3', 'G#3', 'A3', 'Bb3', 'B3', 'D4', 'Eb4', 'E4',
+                     'G4', 'F#4', 'C4', 'G#4', 'F#4', 'F4', 'C#4', 'C4'],
+                    // Retrograde motif
+                    ['F#3', 'G#3', 'A3', 'Bb3', 'B3', 'D4', 'Eb4', 'E4',
+                     'G4', 'F#4', 'C4', 'G#4', 'F#4', 'F4', 'C#4', 'C4'].reverse(),
+                    // Octave-shifted motif
+                    ['C5', 'C#5', 'F5', 'F#5', 'G#5', 'C5', 'F#5', 'G5',
+                     'E5', 'Eb5', 'D5', 'B4', 'Bb4', 'A4', 'G#4', 'F#4'],
+                    // Lower octave motif
+                    ['C3', 'C#3', 'F3', 'F#3', 'G#3', 'C3', 'F#3', 'G3',
+                     'E3', 'Eb3', 'D3', 'B2', 'Bb2', 'A2', 'G#2', 'F#2']
+                ];
+
+                this.currentMotif = Math.random() < 0.6 ? 
+                    [...this.originalMotif] : 
+                    [...this.variations[Math.floor(Math.random() * this.variations.length)]];
+                
+                this.currentMotifPosition = Math.floor(Math.random() * this.currentMotif.length);
+
+                this.satieChords = [
+                    ['C4', 'Eb4', 'G#4', 'D5'],
+                    ['B3', 'D4', 'F#4', 'C5'],
+                    ['C#4', 'E4', 'G#4', 'D5'],
+                    ['D4', 'F4', 'Ab4', 'C#5'],
+                    ['Eb4', 'G4', 'B4', 'F5'],
+                    ['E4', 'G#4', 'C5', 'F#5'],
+                    ['F4', 'Ab4', 'C5', 'E5'],
+                    ['F#4', 'A4', 'C#5', 'F5'],
+                    ['G4', 'B4', 'D#5', 'G#5'],
+                    ['G#4', 'B4', 'D5', 'F#5'],
+                    ['A4', 'C5', 'E5', 'Bb5'],
+                    ['Bb4', 'Db5', 'F5', 'B5']
+                ];
+
+                this.chromaticChords = [
+                    ['C4', 'E4', 'G#4', 'C#5'],
+                    ['C#4', 'F4', 'A4', 'D5'],
+                    ['D4', 'F#4', 'Bb4', 'Eb5'],
+                    ['Eb4', 'G4', 'B4', 'E5'],
+                    ['E4', 'Ab4', 'C5', 'F5'],
+                    ['F4', 'A4', 'C#5', 'F#5']
+                ];
+
+                this.timings = {
+                    pauseBeforeChords: 1000 + Math.random() * 1500,  // 1-2.5 seconds
+                    pauseAfterSequence: 1500 + Math.random() * 2000  // 1.5-3.5 seconds
+                };
+            }
+
+            getRandomTiming(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            getRandomNotesCount() {
+                return Math.floor(Math.random() * 12) + 4;  // 4-16 notes
+            }
+
+            getRandomChordCount() {
+                return Math.floor(Math.random() * 7) + 1;
+            }
+
+            getRandomVolume() {
+                return Math.random() * 0.3 + 0.7;
+            }
+
+            getRandomVelocityLayer() {
+                return Math.floor(Math.random() * 16) + 1;
+            }
+
+            getNextNote(currentIndex) {
+                // 15% chance to repeat the current note
+                if (currentIndex > 0 && Math.random() < 0.15) {
+                    return {
+                        note: this.currentMotif[(this.currentMotifPosition + currentIndex - 1) % this.currentMotif.length],
+                        isRepeat: true
+                    };
+                }
+
+                // 10% chance to switch to a different variation at phrase boundaries
+                if (currentIndex % 8 === 0 && Math.random() < 0.1) {
+                    if (Math.random() < 0.6) {
+                        this.currentMotif = [...this.originalMotif];
+                    } else {
+                        this.currentMotif = [...this.variations[Math.floor(Math.random() * this.variations.length)]];
+                    }
+                }
+                
+                return {
+                    note: this.currentMotif[(this.currentMotifPosition + currentIndex) % this.currentMotif.length],
+                    isRepeat: false
+                };
+            }
+
+            getRandomChordSequence() {
+                const count = this.getRandomChordCount();
+                const sequence = [];
+                for (let i = 0; i < count; i++) {
+                    const chordSet = Math.random() < 0.7 ? 
+                        this.satieChords : this.chromaticChords;
+                    sequence.push(
+                        chordSet[Math.floor(Math.random() * chordSet.length)]
+                    );
+                }
+                return sequence;
+            }
+        }
+        class PlanetaryCalculator {
+            constructor() {
+                this.orbitalPeriods = {
+                    mercury: 87.97,
+                    venus: 224.70,
+                    mars: 686.98,
+                    jupiter: 4332.59,
+                    saturn: 10759.22,
+                    uranus: 30688.5,
+                    neptune: 60195
+                };
+
+                this.referencePositions = {
+                    mercury: { rightAscension: 285.5, declination: -24.1 },
+                    venus: { rightAscension: 315.2, declination: -18.5 },
+                    mars: { rightAscension: 270.8, declination: -23.4 },
+                    jupiter: { rightAscension: 45.6, declination: 12.3 },
+                    saturn: { rightAscension: 330.4, declination: -15.7 },
+                    uranus: { rightAscension: 52.9, declination: 15.8 },
+                    neptune: { rightAscension: 354.2, declination: -3.9 }
+                };
+
+                this.referenceDate = new Date('2024-01-01').getTime();
+            }
+
+            calculateCurrentPositions() {
+                const now = new Date().getTime();
+                const daysSinceReference = (now - this.referenceDate) / (1000 * 60 * 60 * 24);
+                const positions = {};
+
+                for (const planet in this.orbitalPeriods) {
+                    const angularVelocity = 360 / this.orbitalPeriods[planet];
+                    const angleChange = (daysSinceReference * angularVelocity) % 360;
+                    let newRA = (this.referencePositions[planet].rightAscension + angleChange) % 360;
+                    const declinationPhase = (newRA / 360) * 2 * Math.PI;
+                    const maxDeclination = Math.abs(this.referencePositions[planet].declination);
+                    const newDec = Math.sin(declinationPhase) * maxDeclination;
+                    positions[planet] = {
+                        rightAscension: newRA,
+                        declination: newDec
+                    };
+                }
+                return positions;
+            }
+        }
+
+        class PlanetaryRhythm {
+            constructor() {
+                this.setupAudio();
+                this.lastEventTime = Date.now();
+            }
+
+            setupAudio() {
+                // Main effects chain
+                this.reverb = new Tone.Reverb({
+                    decay: 4,
+                    preDelay: 0.2,
+                    wet: 0.3
+                }).toDestination();
+
+                this.delay = new Tone.PingPongDelay({
+                    delayTime: "8n",
+                    feedback: 0.6,
+                    wet: 0.3
+                }).connect(this.reverb);
+
+                this.distortion = new Tone.Distortion({
+                    distortion: 0.8,
+                    wet: 0.2
+                }).connect(this.delay);
+
+                this.filter = new Tone.Filter({
+                    type: "bandpass",
+                    frequency: 2000,
+                    Q: 5
+                }).connect(this.distortion);
+
+                // Pure sine oscillator
+                this.sineOsc = new Tone.Synth({
+                    oscillator: { type: "sine" },
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.2,
+                        sustain: 0,
+                        release: 0.2
+                    },
+                    volume: -10
+                }).connect(this.filter);
+
+                // Noise generator
+                this.noise = new Tone.NoiseSynth({
+                    noise: { type: 'white' },
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.05,
+                        sustain: 0,
+                        release: 0.05
+                    },
+                    volume: -20
+                }).connect(this.filter);
+
+                // Pure frequency oscillator
+                this.pureOsc = new Tone.Oscillator({
+                    type: "sine",
+                    volume: -15
+                }).connect(this.filter);
+
+                // Pulse oscillator for digital tones
+                this.pulseOsc = new Tone.PulseOscillator({
+                    frequency: 440,
+                    width: 0.2,
+                    volume: -20
+                }).connect(this.filter);
+            }
+
+            calculateInteractions(positions) {
+                let events = [];
+                const now = Date.now();
+                
+                // Only generate events if enough time has passed
+                if (now - this.lastEventTime < 100) return events;
+                
+                // Check angular separations between planet pairs
+                const pairs = [
+                    ['mercury', 'venus'],
+                    ['mars', 'jupiter'],
+                    ['saturn', 'uranus'],
+                    ['jupiter', 'saturn']
+                ];
+                
+                pairs.forEach(([p1, p2]) => {
+                    const separation = Math.abs(positions[p1].rightAscension - positions[p2].rightAscension);
+                    const normalizedSep = separation / 360;
+                    
+                    if (normalizedSep < 0.1 || Math.abs(normalizedSep - 0.5) < 0.1) {
+                        events.push({
+                            type: 'alignment',
+                            intensity: 1 - (normalizedSep * 2),
+                            planets: [p1, p2],
+                            frequency: this.getPlanetaryFrequency(p1, p2)
+                        });
+                    }
+                });
+
+                Object.entries(positions).forEach(([planet, pos]) => {
+                    if (Math.abs(pos.declination) < 1) {
+                        events.push({
+                            type: 'crossing',
+                            intensity: 1 - Math.abs(pos.declination),
+                            planet: planet,
+                            frequency: this.getPlanetaryFrequency(planet)
+                        });
+                    }
+                });
+
+                if (events.length > 0) {
+                    this.lastEventTime = now;
+                }
+
+                return events;
+            }
+
+            getPlanetaryFrequency(planet1, planet2 = null) {
+                const baseFreqs = {
+                    mercury: 4400,
+                    venus: 3520,
+                    mars: 2640,
+                    jupiter: 1760,
+                    saturn: 880,
+                    uranus: 440,
+                    neptune: 220
+                };
+
+                // Add some random variation to the frequencies
+                const variation = () => 1 + (Math.random() * 0.4 - 0.2); // ±20% variation
+
+                if (planet2) {
+                    // For alignments, create an interval between the two planets
+                    return [
+                        baseFreqs[planet1] * variation(),
+                        baseFreqs[planet2] * variation()
+                    ];
+                }
+                return baseFreqs[planet1] * variation();
+            }
+
+            playRhythmicEvents(events, intrusionType = 'post-chord') {
+                const eventCount = Math.floor(Math.random() * 3) + 1; // 1-3 events
+                const now = Tone.now();
+
+                for (let i = 0; i < Math.min(eventCount, events.length); i++) {
+                    const event = events[i];
+                    const time = now + (i * (Math.random() * 0.3 + 0.2)); // 0.2-0.5s spacing
+                    
+                    if (intrusionType === 'pre-chord') {
+                        // Pre-chord: Higher frequency, shorter, more precise sounds
+                        if (event.type === 'alignment') {
+                            // Pure sine tones for alignments
+                            const freqs = event.frequency;
+                            this.sineOsc.triggerAttackRelease(freqs[0], "32n", time, 0.7);
+                            this.sineOsc.triggerAttackRelease(freqs[1], "32n", time + 0.05, 0.5);
+                        } else {
+                            // Short digital pulse for crossings
+                            this.pulseOsc.frequency.setValueAtTime(event.frequency, time);
+                            this.pulseOsc.start(time).stop(time + 0.05);
+                        }
+                    } else {
+                        // Post-chord: Lower, more textural sounds
+                        if (event.type === 'alignment') {
+                            // Gliding tones for alignments
+                            const freq = Array.isArray(event.frequency) ? 
+                                event.frequency[0] / 4 : event.frequency / 4;
+                            
+                            this.sineOsc.frequency.setValueAtTime(freq, time);
+                            this.sineOsc.frequency.exponentialRampToValueAtTime(freq * 1.5, time + 0.2);
+                            this.sineOsc.triggerAttackRelease("8n", time);
+                            
+                            // Add subtle noise layer
+                            if (Math.random() < 0.5) {
+                                this.noise.triggerAttackRelease("16n", time + 0.1);
+                            }
+                        } else {
+                            // Filtered noise sweep for crossings
+                            this.filter.frequency.setValueAtTime(100, time);
+                            this.filter.frequency.exponentialRampToValueAtTime(4000, time + 0.2);
+                            this.noise.triggerAttackRelease("8n", time);
+                        }
+                    }
+                }
+            }
+        }
+        class PlanetaryPiano {
+            constructor() {
+                this.sampler = null;
+                this.calculator = new PlanetaryCalculator();
+                this.vexations = new VexationsSequence();
+                this.rhythm = new PlanetaryRhythm();
+                this.currentIndex = 0;
+                this.isPlaying = false;
+                this.loaded = false;
+                this.rhythmCheckInterval = null;
+                this.intrusionType = null;
+                // Add a map to track event timestamps
+                this.lastEventTimes = new Map();
+                this.setupInitialButton();
+            }
+
+            startRhythmCheck() {
+                if (this.rhythmCheckInterval) {
+                    clearInterval(this.rhythmCheckInterval);
+                }
+                
+                // Clear any previous event tracking
+                this.lastEventTimes.clear();
+                
+                this.rhythmCheckInterval = setInterval(() => {
+                    if (this.isPlaying && this.intrusionType) {
+                        const positions = this.calculator.calculateCurrentPositions();
+                        const events = this.rhythm.calculateInteractions(positions);
+                        const now = Date.now();
+                        
+                        if (events.length > 0) {
+                            this.rhythm.playRhythmicEvents(events, this.intrusionType);
+                            
+                            events.forEach(event => {
+                                const desc = event.type === 'alignment' ? 
+                                    `Alignment of ${event.planets.join(' and ')}` :
+                                    `${event.planet} crossing`;
+                                
+                                // Only announce if we haven't seen this event in the last 3 seconds
+                                const lastTime = this.lastEventTimes.get(desc) || 0;
+                                if (now - lastTime > 3000) {
+                                    this.addStatusLine(
+                                        `Electronic intrusion: ${desc}`,
+                                        'electronic'
+                                    );
+                                    this.lastEventTimes.set(desc, now);
+                                }
+                            });
+                        }
+                    }
+                }, 100);
+            }
+
+            stopRhythmCheck() {
+                if (this.rhythmCheckInterval) {
+                    clearInterval(this.rhythmCheckInterval);
+                    this.rhythmCheckInterval = null;
+                }
+                this.lastEventTimes.clear();
+                this.intrusionType = null;
+            }
+
+            setupInitialButton() {
+                const playButton = document.getElementById('playButton');
+                playButton.disabled = false;
+                playButton.textContent = 'Initialize Audio';
+                
+                const handleButton = async () => {
+                    if (!this.loaded) {
+                        playButton.disabled = true;
+                        playButton.textContent = 'Initializing...';
+                        await this.initializeAudio();
+                        return;
+                    }
+                    
+                    if (!this.isPlaying) {
+                        this.isPlaying = true;
+                        playButton.textContent = 'Stop Vexations';
+                        this.startRhythmCheck();
+                        this.playSequence();
+                    } else {
+                        this.isPlaying = false;
+                        playButton.textContent = 'Start Vexations';
+                        this.stopRhythmCheck();
+                    }
+                };
+                
+                playButton.addEventListener('click', handleButton);
+                playButton.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    handleButton();
+                });
+            }
+
+            addStatusLine(message, className = '') {
+                const display = document.getElementById('planet-display');
+                // Add a line break before electronic intrusions
+                const line = className === 'electronic' ? `\n${message}` : message;
+                display.innerHTML += `\n<span class="${className}">${line}</span>`;
+                display.scrollTop = display.scrollHeight;
+                console.log(line);
+            }
+
+            async initializeAudio() {
+                this.addStatusLine('Starting audio initialization...', 'debug');
+                
+                try {
+                    await Tone.start();
+                    
+                    const reverb = new Tone.Reverb({
+                        decay: 2.5,
+                        preDelay: 0.1,
+                        wet: 0.3
+                    }).toDestination();
+
+                    await reverb.generate();
+
+                    this.addStatusLine('Creating sampler...', 'debug');
+                    this.sampler = new Tone.Sampler({
+                        urls: {
+                            "A0": "piano/A0v8.mp3",
+                            "C1": "piano/C1v8.mp3",
+                            "D#1": "piano/D#1v8.mp3",
+                            "F#1": "piano/F#1v8.mp3",
+                            "A1": "piano/A1v8.mp3",
+                            "C2": "piano/C2v8.mp3",
+                            "D#2": "piano/D#2v8.mp3",
+                            "F#2": "piano/F#2v8.mp3",
+                            "A2": "piano/A2v8.mp3",
+                            "C3": "piano/C3v8.mp3",
+                            "D#3": "piano/D#3v8.mp3",
+                            "F#3": "piano/F#3v8.mp3",
+                            "A3": "piano/A3v8.mp3",
+                            "C4": "piano/C4v8.mp3",
+                            "D#4": "piano/D#4v8.mp3",
+                            "F#4": "piano/F#4v8.mp3",
+                            "A4": "piano/A4v8.mp3",
+                            "C5": "piano/C5v8.mp3",
+                            "D#5": "piano/D#5v8.mp3",
+                            "F#5": "piano/F#5v8.mp3"
+                        },
+                        release: 1.0,
+                        attack: 0.005,
+                        volume: 2,
+                        onload: () => {
+                            this.addStatusLine('Piano samples loaded successfully!', 'success');
+                            this.loaded = true;
+                            this.enablePlayButton();
+                        },
+                        onerror: (error) => {
+                            this.addStatusLine(`Failed to load piano samples: ${error}`, 'error');
+                            console.error('Sample loading error:', error);
+                            this.initializeBackupSynth();
+                        }
+                    }).connect(reverb);
+
+                } catch (error) {
+                    this.addStatusLine('Initialization error: ' + error.message, 'error');
+                    console.error('Audio initialization error:', error);
+                    const playButton = document.getElementById('playButton');
+                    playButton.textContent = 'Retry Initialize';
+                    playButton.disabled = false;
+                }
+            }
+
+            enablePlayButton() {
+                const playButton = document.getElementById('playButton');
+                playButton.disabled = false;
+                playButton.classList.add('ready');
+                playButton.textContent = 'Start Vexations';
+                document.getElementById('planet-display').classList.remove('loading');
+            }
+
+            async initializeBackupSynth() {
+                this.addStatusLine('Initializing backup synthesizer...', 'debug');
+                
+                try {
+                    this.sampler = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "triangle" },
+                        envelope: {
+                            attack: 0.1,
+                            decay: 0.3,
+                            sustain: 0.4,
+                            release: 0.8
+                        }
+                    }).toDestination();
+
+                    this.loaded = true;
+                    this.enablePlayButton();
+                    this.addStatusLine('Backup synthesizer ready!', 'success');
+                } catch (e) {
+                    this.addStatusLine('Failed to initialize backup synth: ' + e.message, 'error');
+                }
+            }
+
+            async playNote(note, velocity = 0.7, duration = "4n", isRepeat = false) {
+                try {
+                    const timeVar = Math.random() * 0.03 - 0.015;
+                    
+                    let sustainTime = Tone.Time(duration).toSeconds();
+                    const sustainVar = sustainTime * (1 + (Math.random() * 1.5 - 0.75));
+                    
+                    const minGap = isRepeat ? 350 : 450;
+                    const maxGap = isRepeat ? 800 : 1200;
+                    
+                    const sustainRatio = sustainVar / sustainTime;
+                    const gapTime = minGap + (maxGap - minGap) * sustainRatio * sustainRatio;
+                    
+                    const finalGapTime = Math.random() < 0.25 ? 
+                        Math.max(300, gapTime * 0.4) :
+                        gapTime * (0.6 + Math.random() * 0.6);
+                    
+                    const finalVelocity = isRepeat ? velocity * 0.85 : velocity;
+                    
+                    this.sampler.triggerAttackRelease(
+                        note,
+                        sustainVar,
+                        Tone.now() + timeVar,
+                        finalVelocity
+                    );
+
+                    return finalGapTime;
+                    
+                } catch (e) {
+                    this.addStatusLine(`Error playing note: ${e.message}`, 'error');
+                    return 700;
+                }
+            }
+
+            async playChord(notes, velocity = 0.7, duration = "2n") {
+                try {
+                    let sustainTime = Tone.Time(duration).toSeconds();
+                    const sustainVar = sustainTime * (1 + (Math.random() * 1.5 - 0.75));
+                    
+                    const minGap = 600;
+                    const maxGap = 2000;
+                    const sustainRatio = sustainVar / sustainTime;
+                    const gapTime = minGap + (maxGap - minGap) * sustainRatio * sustainRatio;
+                    
+                    const finalGapTime = Math.random() < 0.3 ? 
+                        Math.max(400, gapTime * 0.3) :
+                        gapTime * (0.5 + Math.random() * 0.7);
+
+                    notes.forEach((note, i) => {
+                        const timeVar = Math.random() * 0.02;
+                        const velVar = velocity * (1 + (Math.random() * 0.1 - 0.05));
+                        
+                        this.sampler.triggerAttackRelease(
+                            note,
+                            sustainVar,
+                            Tone.now() + timeVar,
+                            velVar
+                        );
+                    });
+
+                    return finalGapTime;
+                } catch (e) {
+                    this.addStatusLine(`Error playing chord: ${e.message}`, 'error');
+                    return 1200;
+                }
+            }
+
+            async playSequence() {
+                if (!this.isPlaying) return;
+
+                try {
+                    this.intrusionType = null;
+                    const positions = this.calculator.calculateCurrentPositions();
+                    const noteCount = this.vexations.getRandomNotesCount();
+                    
+                    this.addStatusLine(`\nPlanetary Positions:`, 'debug');
+                    for (const planet in positions) {
+                        this.addStatusLine(
+                            `${planet}: RA ${positions[planet].rightAscension.toFixed(2)}°, ` +
+                            `Dec ${positions[planet].declination.toFixed(2)}°`,
+                            'planet'
+                        );
+                    }
+                    
+                    this.addStatusLine(`\nPlaying ${noteCount} notes in sequence...`);
+
+                    for (let i = 0; i < noteCount; i++) {
+                        if (!this.isPlaying) return;
+                        
+                        const { note, isRepeat } = this.vexations.getNextNote(i);
+                        const velocity = this.vexations.getRandomVolume();
+                        
+                        const gapTime = await this.playNote(
+                            note,
+                            velocity,
+                            "4n",
+                            isRepeat
+                        );
+
+                        this.addStatusLine(
+                            `Note ${i + 1}: ${note}${isRepeat ? ' (repeat)' : ''}`
+                        );
+                        
+                        await new Promise(resolve => setTimeout(resolve, gapTime));
+                    }
+
+                    if (!this.isPlaying) return;
+
+                    this.intrusionType = 'pre-chord';
+                    await new Promise(resolve => 
+                        setTimeout(resolve, this.vexations.timings.pauseBeforeChords)
+                    );
+                    
+                    if (!this.isPlaying) return;
+
+                    this.intrusionType = null;
+                    const chordSequence = this.vexations.getRandomChordSequence();
+                    this.addStatusLine(`\nPlaying ${chordSequence.length} chords...`);
+
+                    for (let chord of chordSequence) {
+                        if (!this.isPlaying) return;
+                        
+                        const velocity = this.vexations.getRandomVolume();
+                        const gapTime = await this.playChord(chord, velocity, "2n");
+                        this.addStatusLine(`Chord: ${chord.join(', ')}`);
+
+                        await new Promise(resolve => setTimeout(resolve, gapTime));
+                    }
+
+                    if (this.isPlaying) {
+                        this.intrusionType = 'post-chord';
+                        setTimeout(() => this.playSequence(), 
+                            this.vexations.timings.pauseAfterSequence
+                        );
+                    }
+
+                } catch (error) {
+                    this.addStatusLine(`Sequence error: ${error.message}`, 'error');
+                    this.isPlaying = false;
+                    document.getElementById('playButton').textContent = 'Start Vexations';
+                }
+            }
+        }
+
+        const planetaryPiano = new PlanetaryPiano();
+    </script>
+</body>
+</html>
