@@ -3,6 +3,16 @@
 <head>
   <title>increasingly unclear / Random Walk 3D</title>
   <script src="p5.js"></script>
+  <script>
+    function isMobile() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    
+    // Redirect to mobile page if on mobile device
+    if (isMobile()) {
+      window.location.href = 'mobile.html';
+    }
+  </script>
   <style>
     * { margin: 0; padding: 0; }
     body {
@@ -50,7 +60,7 @@
         <p><strong><em>Random Walk 3D</em></strong>, 2024</p>
         <br/><br/>
         
-        <p>Based on Dan Shiffman's 2D walker class from <a href="https://natureofcode.com/">The Nature of Code</a>. Use mouse to rotate, arrow keys to zoom</p>
+        <p>Based on Dan Shiffman's 2D walker class from <a href="https://natureofcode.com/">The Nature of Code</a>. Use mouse to rotate, arrow keys to zoom. Find the code <a href="https://github.com/increasinglyunclear/javascript">here</a>.</p>
     </div>
 
   <div id="loading">Loading...</div>
