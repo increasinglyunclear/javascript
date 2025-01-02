@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>increasingly unclear / Random Walk 3D</title>
+  <script src="p5.js"></script>
+  <style>
+    * { margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: black;
+      font-family: monospace;
+      color: white;
+      min-height: 100vh;
+    }
+    #header {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 100;
+      line-height: 1.4;
+    }
+    h1 {
+      font-size: 13px;
+      font-weight: normal;
+      margin-bottom: 4px;
+      color: white;
+    }
+    p {
+      font-size: 13px;
+    }
+    a {
+      color: #ff6b00;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .text-content {
+      margin-bottom: 40px;
+      width: 60%;
+      margin-left: 0;
+    }
+  </style>
+</head>
+<body>
+  <a href="../index.html">increasingly unclear</a><br/><br/>
+    
+    <div class="text-content">
+        <p><strong><em>Random Walk 3D</em></strong>, 2024</p>
+        <br/><br/>
+        
+        <p>Based on Dan Shiffman's 2D walker class from <a href="https://natureofcode.com/">The Nature of Code</a>. Use mouse to rotate, arrow keys to zoom</p>
+    </div>
+
+  <div id="loading">Loading...</div>
+  <script src="Walker.js"></script>
+  <script src="sketch.js"></script>
+
+</body>
+</html> 
