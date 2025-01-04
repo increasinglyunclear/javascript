@@ -1,3 +1,7 @@
+// Random Walk 3D
+// Kevin Walker 02 Jan 2025
+// Based on Dan Shiffman's 2D walker class from <a href="https://natureofcode.com/">The Nature of Code</a>. 
+
 class Walker {
   constructor() {
     this.x = 0;
