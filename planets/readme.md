@@ -2,6 +2,10 @@ Planetary Vexations
 by Kevin Walker
 Dec 2024
 
+>> Update Jan 2025: planetarium.html is a version for 8.1 surround sound and stars intended for display in planetarium, though the text needs to be removed and it needs to run as a standalone app.
+
+///
+
 Generative music piece based on Erik Satie's piano work Vexations. The piano composition is based on real-time positions of the planets, with electronic intrusions based on planetary relations, taking it into Sun Ra territory. 
 
 I became obsessed with Satie's Vexations after composer Stephen Montague introduced my students and me to it around 2018. When I decided to re-create an old world of mine that used the planets to play piano, it provided the perfect framework. I enjoyed writing 'Vexation logic' and 'Planetary Calculator class'
